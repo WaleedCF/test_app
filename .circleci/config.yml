@@ -7,8 +7,8 @@ jobs:
   test-ruby:
     # Install gems, run rspec tests
     docker:
-      - image: cimg/ruby:2.5.4-node
-      - image: circleci/postgres:9.5-alpine
+      - image: cimg/ruby:2.5.4
+      - image: cimg/postgres:9.6.22
     environment:
       RAILS_ENV: test
     steps:

@@ -41,6 +41,10 @@ jobs:
           name: Install dependencies
           command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
 
+      - run:
+          name: RUN apt install tzdata
+          command: apt-get install tzdata
+
       # Store bundle cache
       - save_cache:
           key: rails-demo-{{ checksum "Gemfile.lock" }}

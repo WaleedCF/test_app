@@ -47,7 +47,13 @@ jobs:
           paths:
             - vendor/bundle
 
-      # Setup Database
+      # Setup postgresql
+      - run:
+          name: Setup PostgreSQL
+          command: |
+            psql -h localhost -U postgres -c  "CREATE ROLE root WITH LOGIN PASSWORD 'password';"
+            psql -h localhost -U postgres -c "ALTER ROLE root CREATEDB;"
+    # Configure and Setup Database in Rails
       - run:
           name: Database Setup
           command: |

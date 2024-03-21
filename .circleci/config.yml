@@ -6,13 +6,15 @@ orbs:
 jobs:
   build:
     working_directory: ~/test_app
-    # Install gems, run rspec tests
+
+    # Setup docker images
     docker:
       - image: cimg/ruby:2.5.4
         environment:
           RAILS_ENV: test
           PGHOST: 127.0.0.1
           PGUSER: root
+
       - image: cimg/postgres:9.6.22
         environment:
           POSTGRES_USER: testuser
@@ -20,16 +22,19 @@ jobs:
 
     steps:
       - checkout
+
        # Restore bundle cache
       - restore_cache:
           keys:
             - rails-demo-{{ checksum "Gemfile.lock" }}
             - rails-demo-
 
-      # Bundle install dependencies
+      # Install libraries
       - run:
           name: install libraries
-          command: apt-get update && apt-get install -y libpq-dev postgresql-client
+          command: |
+          sudo apt-get update && \
+          sudo apt-get install -y libpq-dev postgresql-client nodejs
 
       # Bundle install dependencies
       - run:
@@ -42,12 +47,14 @@ jobs:
           paths:
             - vendor/bundle
 
+      # Setup Database
       - run:
           name: Database Setup
           command: |
             bundle exec rake db:create
             bundle exec rake db:migrate
-
+  
+      # Run specs
       - run:
           name: Parallel RSpec
           command: bundle exec rspec

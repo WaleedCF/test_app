@@ -13,12 +13,8 @@ jobs:
         environment:
           RAILS_ENV: test
           PGHOST: 127.0.0.1
-          PGUSER: root
 
       - image: cimg/postgres:9.6.22
-        environment:
-          POSTGRES_USER: testuser
-          POSTGRES_DB: circle-test_test
 
     steps:
       - checkout

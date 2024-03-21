@@ -1,28 +1,26 @@
+# This config was automatically generated from your source code
+# Stacks detected: deps:node:.,deps:ruby:.
 version: 2.1
+orbs:
+  ruby: circleci/ruby@2.0.1
 jobs:
   build:
     working_directory: ~/test_app
-
-    # Primary container image where all commands run
-
+    # Install gems, run rspec tests
     docker:
       - image: cimg/ruby:2.5.4
         environment:
           RAILS_ENV: test
           PGHOST: 127.0.0.1
           PGUSER: root
-
-    # Service container image available at `host: localhost`
-
-      - image: cimg/postgres:14.0
+      - image: cimg/postgres:9.6.22
         environment:
           POSTGRES_USER: testuser
           POSTGRES_DB: circle-test_test
 
     steps:
       - checkout
-
-      # Restore bundle cache
+       # Restore bundle cache
       - restore_cache:
           keys:
             - rails-demo-{{ checksum "Gemfile.lock" }}
@@ -32,10 +30,11 @@ jobs:
       - run:
           name: install libraries
           command: apt-get update && apt-get install -y libpq-dev postgresql-client
+
+      # Bundle install dependencies
       - run:
           name: Install dependencies
           command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
-
 
       # Store bundle cache
       - save_cache:
@@ -47,12 +46,26 @@ jobs:
           name: Database Setup
           command: |
             bundle exec rake db:create
-            bundle exec rake db:structure:load
+            bundle exec rake db:migrate
 
       - run:
           name: Parallel RSpec
-          command: bin/rails test
+          command: bundle exec rspec
 
-      # Save artifacts
-      - store_test_results:
-          path: /tmp/test-results
+  deploy:
+    # This is an example deploy job, not actually used by the workflow
+    docker:
+      - image: cimg/base:stable
+    steps:
+      # Replace this with steps to deploy to users
+      - run:
+          name: deploy
+          command: '#e.g. ./deploy.sh'
+
+workflows:
+  commit-workflow:
+    jobs:
+      - build
+    # - deploy:
+    #     requires:
+    #       - test-ruby

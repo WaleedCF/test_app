@@ -1,0 +1,128 @@
+version: 2.1
+
+jobs:
+  shared_setup: &shared_setup
+    docker:
+      - image: cimg/ruby:2.5.4
+        environment:
+          RAILS_ENV: test
+          PGHOST: 127.0.0.1
+      - image: cimg/postgres:9.6.22
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update
+            apt-get install -y libpq-dev postgresql-client nodejs tzdata
+      - run:
+          name: Bundle install dependencies
+          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
+      - run:
+          name: Setup PostgreSQL
+          command: |
+            psql -h localhost -U postgres -c  "CREATE ROLE root WITH LOGIN PASSWORD 'password';"
+            psql -h localhost -U postgres -c "ALTER ROLE root CREATEDB;"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  build:
+    docker:
+      - image: cimg/ruby:2.5.4
+        environment:
+          RAILS_ENV: test
+          PGHOST: 127.0.0.1
+      - image: cimg/postgres:9.6.22
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update
+            apt-get install -y libpq-dev postgresql-client nodejs tzdata
+      - run:
+          name: Bundle install dependencies
+          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
+      - run:
+          name: Setup PostgreSQL
+          command: |
+            psql -h localhost -U postgres -c  "CREATE ROLE root WITH LOGIN PASSWORD 'password';"
+            psql -h localhost -U postgres -c "ALTER ROLE root CREATEDB;"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+      - run:
+          name: Database Setup
+          command: |
+            bundle exec rake db:create
+            bundle exec rake db:migrate
+
+  lint:
+    docker:
+      - image: cimg/ruby:2.5.4
+        environment:
+          RAILS_ENV: test
+          PGHOST: 127.0.0.1
+      - image: cimg/postgres:9.6.22
+    steps:
+      - attach_workspace:
+          at: .
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update
+            apt-get install -y libpq-dev postgresql-client nodejs tzdata
+      - run:
+          name: Bundle install dependencies
+          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
+      - run:
+          name: Running Linter
+          command: bundle exec rubocop
+
+  test:
+    docker:
+      - image: cimg/ruby:2.5.4
+        environment:
+          RAILS_ENV: test
+          PGHOST: 127.0.0.1
+      - image: cimg/postgres:9.6.22
+    steps:
+      - attach_workspace:
+          at: .
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update
+            apt-get install -y libpq-dev postgresql-client nodejs tzdata
+      - run:
+          name: Bundle install dependencies
+          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
+      - run:
+          name: Setup PostgreSQL
+          command: |
+            psql -h localhost -U postgres -c  "CREATE ROLE root WITH LOGIN PASSWORD 'password';"
+            psql -h localhost -U postgres -c "ALTER ROLE root CREATEDB;"
+      - run:
+          name: Database Setup
+          command: |
+            bundle exec rake db:create RAILS_ENV=test
+            bundle exec rake db:migrate RAILS_ENV=test
+      - run:
+          name: Parallel RSpec
+          command: bundle exec rspec
+
+workflows:
+  commit-workflow:
+    jobs:
+      - build
+      - lint:
+          requires:
+            - build
+      - test:
+          requires:
+            - build
